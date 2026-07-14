@@ -1,7 +1,0 @@
-﻿{
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
-    { "source": "/__gx/:path*", "destination": "/api/proxy/gutendex/:path*" },
-    { "source": "/__gb/:path*", "destination": "/api/proxy/gutenberg/:path*" }
-  ]
-}

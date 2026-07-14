@@ -4,16 +4,17 @@
 //
 // IMPORTANTE: gutenberg.org NO envia cabecera Access-Control-Allow-Origin,
 // por lo que el navegador bloquea cualquier fetch directo desde otra app.
-// Tanto en desarrollo (Vite proxy) como en produccion (Vercel rewrites)
-// usamos los mismos prefijos /__gx y /__gb que estan configurados en
-// vite.config.ts y vercel.json respectivamente.
+// Usamos proxies:
+//   - Desarrollo: Vite proxy /__gx -> gutendex.com, /__gb -> gutenberg.org
+//   - Produccion (Vercel): Edge Functions /api/proxy/gutendex y /api/proxy/gutenberg
 
-const GUTENDEX_BASE = '/__gx';
+const IS_DEV = import.meta.env.DEV;
+const GUTENDEX_BASE = IS_DEV ? '/__gx' : '/api/proxy/gutendex';
 const GUTENBERG_HOST = 'https://www.gutenberg.org';
 function rewriteGutenbergUrl(url: string): string {
   if (!url.startsWith(GUTENBERG_HOST)) return url;
   const path = url.slice(GUTENBERG_HOST.length);
-  return '/__gb' + path;
+  return IS_DEV ? '/__gb' + path : '/api/proxy/gutenberg' + path;
 }
 
 export interface GutendexBook {
