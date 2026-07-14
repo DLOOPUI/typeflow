@@ -1,32 +1,40 @@
-import { VercelRequest, VercelResponse } from "@vercel/node";
+export const config = {
+  runtime: "edge",
+};
 
-export default async function handler(
-  req: VercelRequest,
-  res: VercelResponse
-) {
-  const path = req.url?.replace("/api/proxy/gutendex", "") ?? "";
-  const targetUrl = `https://gutendex.com${path}`;
+export default async function handler(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const path = url.pathname.replace(/^\/api\/proxy\/gutendex/, "");
+  const queryString = url.search;
+  const targetUrl = `https://gutendex.com${path}${queryString}`;
 
   try {
     const response = await fetch(targetUrl, {
       method: req.method,
       headers: {
-        "User-Agent": "TypeFlow/1.0",
+        "Accept": "application/json, text/plain, */*",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "Host": "gutendex.com",
       },
-      body: req.body ? JSON.stringify(req.body) : undefined,
     });
 
     const data = await response.arrayBuffer();
     const contentType = response.headers.get("Content-Type") ?? "application/json";
 
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.setHeader("Cache-Control", "public, max-age=300");
-    res.setHeader("Content-Type", contentType);
-
-    res.status(response.status).send(Buffer.from(data));
+    return new Response(data, {
+      status: response.status,
+      headers: {
+        "Content-Type": contentType,
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Cache-Control": "public, max-age=300",
+      },
+    });
   } catch (error) {
-    res.status(502).json({ error: "Proxy error" });
+    return new Response(JSON.stringify({ error: "Proxy error", details: String(error) }), {
+      status: 502,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 }
