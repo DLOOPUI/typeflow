@@ -1,0 +1,6 @@
+﻿{
+  "rewrites": [
+    { "source": "/__gx/:path*", "destination": "https://gutendex.com/:path*" },
+    { "source": "/__gb/:path*", "destination": "https://www.gutenberg.org/:path*" }
+  ]
+}

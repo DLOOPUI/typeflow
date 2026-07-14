@@ -1,0 +1,88 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+  <title>TypeFlow — Mecanografia relajada</title>
+</head>
+<body>
+  <div id="app">
+    <header class="app-header">
+      <div class="brand">
+        <span class="brand-mark"></span>
+        <h1>TypeFlow</h1>
+        <span class="brand-sub">escribe a tu ritmo</span>
+      </div>
+      <nav class="header-controls">
+        <button id="btn-sound" class="icon-btn" title="Sonido on/off" aria-pressed="true">
+          <span class="ico ico-sound-on">SND</span>
+        </button>
+        <button id="btn-theme" class="icon-btn" title="Cambiar tema" aria-pressed="false">
+          <span class="ico ico-theme">DARK</span>
+        </button>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section id="view-home" class="view active">
+        <div class="search-box">
+          <input id="search-input" type="search" placeholder="Busca por autor o titulo (p.ej. Dickens, Shakespeare, Cervantes)..." autocomplete="off" />
+          <button id="search-btn">Buscar</button>
+        </div>
+        <div class="quick-suggest">
+          <span>Prueba con:</span>
+          <button data-q="Dickens">Dickens</button>
+          <button data-q="Shakespeare">Shakespeare</button>
+          <button data-q="Doyle">Doyle</button>
+          <button data-q="Poe">Poe</button>
+          <button data-q="Cervantes">Cervantes</button>
+          <button data-q="Verne">Verne</button>
+          <button data-q="Austen">Austen</button>
+        </div>
+        <h2 class="section-title">Resultados</h2>
+        <div id="search-results" class="results-grid" aria-live="polite">
+          <p class="hint">Escribe arriba para encontrar libros clasicos de dominio publico.</p>
+        </div>
+        <h2 class="section-title">Continuar</h2>
+        <div id="recent-books" class="results-grid">
+          <p class="hint">Aun no has empezado ningun libro.</p>
+        </div>
+      </section>
+
+      <section id="view-read" class="view">
+        <div class="read-topbar">
+          <button id="btn-back" class="icon-btn">&larr; Libros</button>
+          <div id="book-info" class="book-info"></div>
+          <div class="timer-controls">
+            <select id="timer-mode" title="Modo del temporizador">
+              <option value="free">Libre</option>
+              <option value="1">1 min</option>
+              <option value="5">5 min</option>
+              <option value="10">10 min</option>
+              <option value="15">15 min</option>
+              <option value="30">30 min</option>
+            </select>
+            <div id="timer-display" class="timer-display">00:00</div>
+            <button id="btn-timer-pause" class="icon-btn" disabled>Pausa</button>
+          </div>
+        </div>
+        <div id="text-area" class="text-area" tabindex="0" aria-label="Zona de escritura"></div>
+        <div class="read-bottombar">
+          <button id="btn-prev-fragment" class="icon-btn">&larr; Anterior</button>
+          <div id="stats-mini" class="stats-mini">Empieza a escribir...</div>
+          <button id="btn-next-fragment" class="icon-btn">Siguiente &rarr;</button>
+        </div>
+        <input id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" aria-hidden="true" />
+      </section>
+    </main>
+
+    <footer class="app-footer">
+      <span>Libros cortesia de <a href="https://gutendex.com" target="_blank" rel="noopener">Gutendex</a> / Project Gutenberg</span>
+    </footer>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
