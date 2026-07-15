@@ -1,9 +1,26 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import https from "https";
+import { URL } from "url";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const path = req.url?.replace(/^\/api\/proxy\/gutenberg/, "") ?? "";
-  const targetUrl = `https://www.gutenberg.org${path}`;
+  // Vercel pasa el catch-all [...path] como parametro "path" en req.query
+  const pathParam = req.query.path;
+  const pathParts = Array.isArray(pathParam) ? pathParam : (pathParam ? [pathParam] : []);
+  const pathStr = "/" + pathParts.join("/");
+
+  // Reconstruir query string SIN el parametro "path"
+  const queryParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(req.query)) {
+    if (key === "path") continue;
+    if (Array.isArray(value)) {
+      value.forEach((v) => queryParams.append(key, String(v)));
+    } else {
+      queryParams.append(key, String(value));
+    }
+  }
+
+  const queryString = queryParams.toString();
+  const targetUrl = `https://www.gutenberg.org${pathStr}${queryString ? "?" + queryString : ""}`;
 
   console.log(`[gutenberg-proxy] URL: ${targetUrl}`);
 
