@@ -6,15 +6,26 @@
 // por lo que el navegador bloquea cualquier fetch directo desde otra app.
 // Usamos proxies:
 //   - Desarrollo: Vite proxy /__gx -> gutendex.com, /__gb -> gutenberg.org
-//   - Produccion (Vercel): Edge Functions /api/proxy/gutendex y /api/proxy/gutenberg
+//   - Produccion (Vercel): Serverless Functions /api/gutendex y /api/gutenberg
 
 const IS_DEV = import.meta.env.DEV;
-const GUTENDEX_BASE = IS_DEV ? '/__gx' : '/api/proxy/gutendex';
-const GUTENBERG_HOST = 'https://www.gutenberg.org';
+
+// En desarrollo usamos /__gx, en produccion usamos /api/gutendex
+function gutendexSearchUrl(query: string, languages: string): string {
+  const params = new URLSearchParams();
+  if (query) params.append('search', query);
+  if (languages) params.append('languages', languages);
+  const qs = params.toString();
+  if (IS_DEV) return `/__gx/books/${qs ? '?' + qs : ''}`;
+  return `/api/gutendex${qs ? '?' + qs : ''}`;
+}
+
+// Para Gutenberg, en desarrollo /__gb + path, en produccion pasamos el path como ?url=
 function rewriteGutenbergUrl(url: string): string {
-  if (!url.startsWith(GUTENBERG_HOST)) return url;
-  const path = url.slice(GUTENBERG_HOST.length);
-  return IS_DEV ? '/__gb' + path : '/api/proxy/gutenberg' + path;
+  if (!url.startsWith('https://www.gutenberg.org')) return url;
+  const path = url.slice('https://www.gutenberg.org'.length);
+  if (IS_DEV) return '/__gb' + path;
+  return '/api/gutenberg?url=' + encodeURIComponent(path);
 }
 
 export interface GutendexBook {
@@ -35,17 +46,15 @@ export interface SearchResult {
 }
 
 export async function searchBooks(query: string, languages: string = ''): Promise<SearchResult> {
-  const params = new URLSearchParams();
-  if (query) params.append('search', query);
-  if (languages) params.append('languages', languages);
-  const url = `${GUTENDEX_BASE}/books?${params.toString()}`;
+  const url = gutendexSearchUrl(query, languages);
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Gutendex error ${res.status}`);
   return (await res.json()) as SearchResult;
 }
 
 export async function getBook(id: number): Promise<GutendexBook> {
-  const res = await fetch(`${GUTENDEX_BASE}/books/${id}`);
+  const url = IS_DEV ? `/__gx/books/${id}` : `/api/gutendex?id=${id}`;
+  const res = await fetch(url);
   if (!res.ok) throw new Error(`Gutendex error ${res.status}`);
   return (await res.json()) as GutendexBook;
 }
