@@ -1,5 +1,5 @@
 export const config = {
-  runtime: "node",
+  runtime: "nodejs",
   regions: ["sfo1"],
 };
 
