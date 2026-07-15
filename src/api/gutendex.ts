@@ -2,25 +2,28 @@
 // Cliente de la API publica de Gutendex (https://gutendex.com)
 // Gutendex ofrece libros de Project Gutenberg en dominio publico.
 //
-// IMPORTANTE: gutenberg.org NO envia cabecera Access-Control-Allow-Origin,
-// por lo que el navegador bloquea cualquier fetch directo desde otra app.
-// Usamos proxies:
+// IMPORTANTE: ni gutenberg.org ni gutendex.com envian cabecera
+// Access-Control-Allow-Origin, por lo que el navegador bloquea el fetch directo.
+// Usamos:
 //   - Desarrollo: Vite proxy /__gx -> gutendex.com, /__gb -> gutenberg.org
-//   - Produccion (Vercel): Serverless Functions /api/gutendex y /api/gutenberg
+//   - Produccion: proxy.cors.sh para Gutendex (Gutendex bloquea IPs de Vercel)
+//                 /api/gutenberg Serverless Function para Gutenberg (no bloquea)
 
 const IS_DEV = import.meta.env.DEV;
+const CORS_PROXY = 'https://proxy.cors.sh/';
 
-// En desarrollo usamos /__gx, en produccion usamos /api/gutendex
+// Gutendex: dev usa /__gx, prod usa cors.sh + URL completa
 function gutendexSearchUrl(query: string, languages: string): string {
   const params = new URLSearchParams();
   if (query) params.append('search', query);
   if (languages) params.append('languages', languages);
   const qs = params.toString();
+  const gutendexUrl = `https://gutendex.com/books/${qs ? '?' + qs : ''}`;
   if (IS_DEV) return `/__gx/books/${qs ? '?' + qs : ''}`;
-  return `/api/gutendex${qs ? '?' + qs : ''}`;
+  return CORS_PROXY + gutendexUrl;
 }
 
-// Para Gutenberg, en desarrollo /__gb + path, en produccion pasamos el path como ?url=
+// Gutenberg: dev usa /__gb, prod usa Serverless Function /api/gutenberg
 function rewriteGutenbergUrl(url: string): string {
   if (!url.startsWith('https://www.gutenberg.org')) return url;
   const path = url.slice('https://www.gutenberg.org'.length);
@@ -53,7 +56,8 @@ export async function searchBooks(query: string, languages: string = ''): Promis
 }
 
 export async function getBook(id: number): Promise<GutendexBook> {
-  const url = IS_DEV ? `/__gx/books/${id}` : `/api/gutendex?id=${id}`;
+  const gutendexUrl = `https://gutendex.com/books/${id}`;
+  const url = IS_DEV ? `/__gx/books/${id}` : CORS_PROXY + gutendexUrl;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Gutendex error ${res.status}`);
   return (await res.json()) as GutendexBook;
