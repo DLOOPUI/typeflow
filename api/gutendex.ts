@@ -1,6 +1,6 @@
 export const config = {
   runtime: "nodejs",
-  regions: ["sfo1"],
+  regions: ["fra1"],
 };
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
