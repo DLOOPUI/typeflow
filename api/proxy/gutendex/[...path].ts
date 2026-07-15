@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import https from "https";
-import http from "http";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const path = req.url?.replace(/^\/api\/proxy\/gutendex/, "") ?? "";
@@ -8,42 +7,44 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   console.log(`[gutendex-proxy] URL: ${targetUrl}`);
 
-  proxyRequest(targetUrl, res);
+  proxyRequest(targetUrl, res, 0);
 }
 
-function proxyRequest(targetUrl: string, res: VercelResponse) {
+function proxyRequest(targetUrl: string, res: VercelResponse, redirectCount: number) {
+  if (redirectCount > 5) {
+    res.status(502).json({ error: "Too many redirects" });
+    return;
+  }
+
   const parsed = new URL(targetUrl);
-  const lib = parsed.protocol === "https:" ? https : http;
 
   const options: https.RequestOptions = {
     hostname: parsed.hostname,
-    port: parsed.port || (parsed.protocol === "https:" ? 443 : 80),
+    port: 443,
     path: parsed.pathname + parsed.search,
     method: "GET",
     headers: {
       "Accept": "application/json, text/plain, */*",
-      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9",
+      "Accept-Encoding": "identity",
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Referer": "https://gutendex.com/",
+      "Connection": "keep-alive",
     },
   };
 
-  const proxyReq = lib.request(options, (proxyRes) => {
-    // Seguir redirects (301, 302, 307, 308)
-    if (
-      proxyRes.statusCode &&
-      [301, 302, 307, 308].includes(proxyRes.statusCode) &&
-      proxyRes.headers.location
-    ) {
+  const proxyReq = https.request(options, (proxyRes: any) => {
+    if (proxyRes.statusCode && [301, 302, 307, 308].includes(proxyRes.statusCode) && proxyRes.headers.location) {
       const redirectUrl = proxyRes.headers.location.startsWith("http")
         ? proxyRes.headers.location
-        : `${parsed.protocol}//${parsed.hostname}${proxyRes.headers.location}`;
+        : `https://${parsed.hostname}${proxyRes.headers.location}`;
       console.log(`[gutendex-proxy] Redirect -> ${redirectUrl}`);
-      proxyRequest(redirectUrl, res);
+      proxyRequest(redirectUrl, res, redirectCount + 1);
       return;
     }
 
     const chunks: Buffer[] = [];
-    proxyRes.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    proxyRes.on("data", (chunk: any) => chunks.push(Buffer.from(chunk)));
     proxyRes.on("end", () => {
       const data = Buffer.concat(chunks);
       const contentType = proxyRes.headers["content-type"] ?? "application/json";
@@ -58,7 +59,7 @@ function proxyRequest(targetUrl: string, res: VercelResponse) {
     });
   });
 
-  proxyReq.on("error", (error) => {
+  proxyReq.on("error", (error: any) => {
     console.error("[gutendex-proxy] Error:", error);
     res.status(502).json({ error: "Proxy error", details: String(error) });
   });
