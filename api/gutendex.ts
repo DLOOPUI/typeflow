@@ -1,10 +1,12 @@
+export const config = {
+  runtime: "node",
+  regions: ["sfo1"],
+};
+
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import https from "https";
 
-// Proxy para Gutendex. El frontend hace fetch a /api/gutendex?search=Romeo
-// y esta funcion lo reenvia a https://gutendex.com/books?search=Romeo
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  // Reconstruir query string desde req.query
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(req.query)) {
     if (Array.isArray(value)) {
